@@ -9,7 +9,7 @@
           <v-text-field v-model="name" :counter="10" label="Имя" required></v-text-field>
           <v-text-field v-model="lastname" :counter="10" label="Фамилия" required></v-text-field>
 
-          <v-text-field v-model="email" label="E-mail" required></v-text-field>
+          <v-text-field v-model="email" label="E-mail" :rules="emailRules" required></v-text-field>
 
           <v-menu
             ref="dialogFrom"
@@ -69,7 +69,12 @@
             required
           ></v-checkbox>-->
 
-          <v-btn :disabled="validForm" color="success" class="mr-4" @click="validate">Создать</v-btn>
+          <v-btn
+            :disabled="validForm"
+            color="success"
+            class="mr-4"
+            @click="personInfoSubmit"
+          >Создать</v-btn>
         </v-form>
       </v-card>
     </v-dialog>
@@ -77,6 +82,8 @@
 </template>
 
 <script>
+import { mapActions } from "vuex";
+
 export default {
   name: "ModalForm",
 
@@ -96,11 +103,32 @@ export default {
     dialog: true,
     valid: false,
     email: "",
+    emailRules: [
+      (v) =>
+        !v ||
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) ||
+        "E-mail must be valid",
+    ],
     name: "",
     lastname: "",
   }),
   methods: {
-    validate() {},
+    ...mapActions(["actionPerson"]),
+    personInfoSubmit() {
+      const personInfo = {
+        id: Date.now(),
+        name: this.name,
+        lastname: this.lastname,
+        email: this.email,
+        dateFrom: this.dateFormattedFrom,
+        dateTo: this.dateFormattedTo,
+        TableInfo: [],
+      };
+      this.$store.dispatch("actionPerson", personInfo);
+      setTimeout(() => {
+        this.$router.push({ name: "Page", params: { id: personInfo.id } });
+      }, 2000);
+    },
     formatDate(date) {
       if (!date) return null;
 

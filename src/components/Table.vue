@@ -1,11 +1,38 @@
 <template>
   <v-app>
-    <v-btn @click="openModal" class="button" small color="primary">Добавить данные</v-btn>
-    <v-data-table :items="GetTaskPerson" :headers="headers"></v-data-table>
+    <div class="buttonConsole">
+      <v-btn @click="openModal" class="button" small color="primary">Добавить данные</v-btn>
+      <v-btn
+        @click="editSelectedItem"
+        :disabled="!selected.length"
+        class="button"
+        small
+        color="primary"
+      >Редактировать</v-btn>
+      <v-btn
+        @click="deletedSelectedItem"
+        :disabled="!selected.length"
+        class="button"
+        small
+        color="primary"
+      >Удалить</v-btn>
+    </div>
+    <v-data-table
+      v-model="selected"
+      :single-select="singleSelect"
+      show-select
+      :items="GetTaskPerson"
+      item-key="Id"
+      :headers="headers"
+    >
+      <template v-slot:item.Status="{ item }">
+        <p
+          :class="item.Status == 'В ожидании' ? 'tableRed' : item.Status ==  'В работе' ? 'tableBlue' : 'tableGreen'"
+        >{{ item.Status }}</p>
+      </template>
+    </v-data-table>
+
     <v-dialog v-model="dialog" persistent max-width="500">
-      <!-- <template v-slot:activator="{ on, attrs }">
-        <v-btn color="primary" dark v-bind="attrs" v-on="on">Open Dialog</v-btn>
-      </template>-->
       <v-card>
         <v-col class="d-flex">
           <v-text-field v-model="items.Categories" label="Категория" required></v-text-field>
@@ -24,7 +51,18 @@
         </v-col>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="addTaskInTable">Сохранить</v-btn>
+          <v-btn
+            :class="[edit ? 'editTrue' : '']"
+            color="blue darken-1"
+            text
+            @click="addTaskInTable"
+          >Сохранить</v-btn>
+          <v-btn
+            :class="[!edit ? 'editTrue' : '']"
+            color="blue darken-1"
+            text
+            @click="editTaskInTable"
+          >Редактировать</v-btn>
           <v-btn color="red darken-1" text @click="dialog = false">Отмена</v-btn>
         </v-card-actions>
       </v-card>
@@ -36,13 +74,16 @@
 import { mapGetters } from "vuex";
 export default {
   data: () => ({
+    singleSelect: true,
+    selected: [],
+    edit: false,
     headers: [
       { text: "ID", value: "Id" },
       { text: "Категория", value: "Categories" },
       { text: "Название", value: "Name" },
       { text: "Описание", value: "Discription" },
-      { text: "Приоритет", value: "Status" },
-      { text: "Статус", value: "Priority" },
+      { text: "Статус", value: "Status" },
+      { text: "Приоритет", value: "Priority" },
     ],
     items: {
       Categories: "",
@@ -57,10 +98,16 @@ export default {
   }),
   methods: {
     openModal() {
+      this.edit = false;
       this.dialog = true;
     },
     addTaskInTable() {
-      let id = this.GetTaskPerson.length;
+      let id = 0;
+      for (var i in this.GetTaskPerson) {
+        if (this.GetTaskPerson[i].Id > id) {
+          id = this.GetTaskPerson[i].Id;
+        }
+      }
       const addTask = {
         Id: ++id,
         Categories: this.items.Categories,
@@ -70,7 +117,6 @@ export default {
         Priority: this.items.Priority,
         idPerson: +this.$route.params.id,
       };
-      console.log(addTask);
       this.$store.dispatch("addTaskPerson", addTask);
       this.dialog = false;
       this.items = {
@@ -80,6 +126,37 @@ export default {
         Status: null,
         Priority: null,
       };
+    },
+    deletedSelectedItem() {
+      this.$store.dispatch("deletedTaskPerson", this.selected);
+    },
+    editSelectedItem() {
+      let editInfo = this.selected[0];
+      console.log(editInfo);
+      this.edit = true;
+      this.dialog = true;
+      this.items = {
+        Categories: editInfo.Categories,
+        Name: editInfo.Name,
+        Discription: editInfo.Discription,
+        Status: editInfo.Status,
+        Priority: editInfo.Priority,
+      };
+    },
+    editTaskInTable() {
+      let editSelected = this.selected[0];
+
+      editSelected = {
+        Id: editSelected.Id,
+        Categories: this.items.Categories,
+        Name: this.items.Name,
+        Discription: this.items.Discription,
+        Status: this.items.Status,
+        Priority: this.items.Priority,
+        idPerson: editSelected.idPerson,
+      };
+      this.$store.dispatch("editTableInfo", editSelected);
+      this.dialog = false;
     },
   },
   computed: {
@@ -94,6 +171,24 @@ export default {
 <style scoped>
 .button {
   max-width: 200px;
+  margin-left: 20px;
+}
+.buttonConsole {
   margin-left: auto;
+}
+.tableRed {
+  margin: 0;
+  color: red;
+}
+.tableBlue {
+  margin: 0;
+  color: blue;
+}
+.tableGreen {
+  margin: 0;
+  color: green;
+}
+.editTrue {
+  display: none;
 }
 </style>

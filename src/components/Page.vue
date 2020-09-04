@@ -52,7 +52,6 @@ export default {
 
   computed: {
     person() {
-      console.log(this.$store.getters);
       return this.$store.getters.personGet(+this.$route.params.id);
     },
   },

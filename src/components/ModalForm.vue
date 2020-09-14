@@ -5,9 +5,12 @@
         persistent // не дает окну закрыться при потере фокуса
       -->
       <v-card>
+        <v-overlay :value="overlay">
+          <v-progress-circular indeterminate size="64"></v-progress-circular>
+        </v-overlay>
         <v-form class="firstForm" ref="form" v-model="valid">
-          <v-text-field v-model="name" :counter="10" label="Имя" required></v-text-field>
-          <v-text-field v-model="lastname" :counter="10" label="Фамилия" required></v-text-field>
+          <v-text-field v-model="name" :rules="emailTextField" label="Имя" required></v-text-field>
+          <v-text-field v-model="lastname" :rules="emailTextField" label="Фамилия" required></v-text-field>
 
           <v-text-field v-model="email" label="E-mail" :rules="emailRules" required></v-text-field>
 
@@ -19,6 +22,7 @@
             transition="scale-transition"
             offset-y
             min-width="290px"
+            required
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
@@ -28,6 +32,7 @@
                 v-bind="attrs"
                 @blur="dateFrom=parseDate(dateFormattedFrom)"
                 v-on="on"
+                required
               ></v-text-field>
             </template>
             <v-date-picker v-model="dateFrom" scrollable>
@@ -44,6 +49,7 @@
             transition="scale-transition"
             offset-y
             min-width="290px"
+            required
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
@@ -53,6 +59,8 @@
                 v-bind="attrs"
                 @blur="dateTo=parseDate(dateFormattedTo)"
                 v-on="on"
+                :rules="dateToRules"
+                required
               ></v-text-field>
             </template>
             <v-date-picker v-model="dateTo" scrollable>
@@ -104,17 +112,25 @@ export default {
     valid: false,
     email: "",
     emailRules: [
+      (v) => !!v || "Требуется адрес электронной почты",
       (v) =>
         !v ||
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) ||
-        "E-mail must be valid",
+        "Неправильно введена почта",
+    ],
+    dateToRules: [(v) => !!v || "Дата должна быть больше предыдущей"],
+    emailTextField: [
+      (v) => !!v || "Обязательное поле",
+      (v) => v.length > 7 || "Минимум 7 символов",
     ],
     name: "",
     lastname: "",
+    overlay: false,
   }),
   methods: {
     ...mapActions(["actionPerson"]),
     personInfoSubmit() {
+      this.overlay = true;
       const personInfo = {
         id: Date.now(),
         name: this.name,
@@ -141,6 +157,13 @@ export default {
       const [day, month, year] = date.split("-");
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     },
+    validDate() {
+      let dateFromParse = Date.parse(this.dateFrom);
+      let dateToParse = Date.parse(this.dateTo);
+      if (dateToParse < dateFromParse) {
+        this.dateTo = "";
+      }
+    },
   },
   watch: {
     dateFrom() {
@@ -152,13 +175,8 @@ export default {
   },
   computed: {
     validForm() {
-      if (
-        this.dateFrom !== "" &&
-        this.dateTo !== "" &&
-        this.email !== "" &&
-        this.name !== "" &&
-        this.lastname !== ""
-      ) {
+      this.validDate();
+      if (this.valid) {
         return false;
       }
       return true;

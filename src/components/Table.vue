@@ -34,37 +34,40 @@
 
     <v-dialog v-model="dialog" persistent max-width="500">
       <v-card>
-        <v-col class="d-flex">
-          <v-text-field v-model="items.Categories" label="Категория" required></v-text-field>
-        </v-col>
-        <v-col class="d-flex">
-          <v-text-field v-model="items.Name" label="Название" required></v-text-field>
-        </v-col>
-        <v-col class="d-flex">
-          <v-text-field v-model="items.Discription" label="Описание" required></v-text-field>
-        </v-col>
-        <v-col class="d-flex">
-          <v-select :items="StatusValue" v-model="items.Status" label="Статус"></v-select>
-        </v-col>
-        <v-col class="d-flex">
-          <v-select :items="PriorityValue" v-model="items.Priority" label="Приоритет"></v-select>
-        </v-col>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            :class="[edit ? 'editTrue' : '']"
-            color="blue darken-1"
-            text
-            @click="addTaskInTable"
-          >Сохранить</v-btn>
-          <v-btn
-            :class="[!edit ? 'editTrue' : '']"
-            color="blue darken-1"
-            text
-            @click="editTaskInTable"
-          >Редактировать</v-btn>
-          <v-btn color="red darken-1" text @click="dialog = false">Отмена</v-btn>
-        </v-card-actions>
+        <v-form>
+          <v-col class="d-flex">
+            <v-text-field v-model="items.Categories" label="Категория" required></v-text-field>
+          </v-col>
+          <v-col class="d-flex">
+            <v-text-field v-model="items.Name" label="Название" required></v-text-field>
+          </v-col>
+          <v-col class="d-flex">
+            <v-text-field v-model="items.Discription" label="Описание" required></v-text-field>
+          </v-col>
+          <v-col class="d-flex">
+            <v-select :items="StatusValue" v-model="items.Status" label="Статус"></v-select>
+          </v-col>
+          <v-col class="d-flex">
+            <v-select :items="PriorityValue" v-model="items.Priority" label="Приоритет"></v-select>
+          </v-col>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              :disabled="dialogForm"
+              :class="[edit ? 'editTrue' : '']"
+              color="blue darken-1"
+              text
+              @click="addTaskInTable"
+            >Сохранить</v-btn>
+            <v-btn
+              :class="[!edit ? 'editTrue' : '']"
+              color="blue darken-1"
+              text
+              @click="editTaskInTable"
+            >Редактировать</v-btn>
+            <v-btn color="red darken-1" text @click="dialog = false">Отмена</v-btn>
+          </v-card-actions>
+        </v-form>
       </v-card>
     </v-dialog>
   </v-app>
@@ -161,6 +164,17 @@ export default {
   },
   computed: {
     ...mapGetters(["GetTaskPerson"]),
+    dialogForm() {
+      let valid = true;
+      for (let i in this.items) {
+        if (this.items[i] == "" || this.items[i] == null) {
+          return (valid = true);
+        } else {
+          valid = false;
+        }
+      }
+      return valid;
+    },
   },
   mounted() {
     this.$store.dispatch("addTableInfo", +this.$route.params.id);
